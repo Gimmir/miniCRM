@@ -2,9 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useTelegram, usePullToRefresh } from '@/hooks';
-import { Sidebar } from './Sidebar';
 import { Header } from './Header';
-import { MobileNav } from './MobileNav';
 import { PullToRefreshIndicator } from './PullToRefreshIndicator';
 
 interface AppShellProps {
@@ -25,7 +23,6 @@ export const AppShell = ({
     if (onRefresh) {
       await onRefresh();
     } else {
-      // Default refresh behavior
       await new Promise(resolve => setTimeout(resolve, 1000));
     }
   };
@@ -49,43 +46,32 @@ export const AppShell = ({
 
   return (
     <div 
-      className="min-h-[100dvh] bg-[#fafafa] text-slate-900 font-sans flex overflow-x-hidden"
-      style={{ WebkitTapHighlightColor: 'transparent' }}
+      className="flex-1 w-full md:pl-72 flex flex-col min-w-0 relative"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* SIDEBAR (Desktop) */}
-      <Sidebar user={user} />
+      {/* PULL TO REFRESH INDICATOR */}
+      <PullToRefreshIndicator 
+        pullMoveY={pullMoveY}
+        isRefreshing={isRefreshing}
+      />
 
-      {/* CONTENT AREA */}
-      <div className="flex-1 w-full md:pl-72 flex flex-col min-w-0 relative">
-        
-        {/* PULL TO REFRESH INDICATOR */}
-        <PullToRefreshIndicator 
-          pullMoveY={pullMoveY}
-          isRefreshing={isRefreshing}
-        />
+      {/* Header (Page Specific) */}
+      <Header 
+        user={user}
+        title={title}
+        onSearch={() => console.log('Search')}
+        onNotifications={() => console.log('Notifications')}
+      />
 
-        {/* Header */}
-        <Header 
-          user={user}
-          title={title}
-          onSearch={() => console.log('Search')}
-          onNotifications={() => console.log('Notifications')}
-        />
-
-        {/* Scrollable Content - Animated with Pull */}
-        <main 
-          className="flex-1 p-4 md:p-10 w-full max-w-7xl mx-auto pb-24 md:pb-10 relative z-10 bg-[#fafafa] transition-transform duration-200 ease-out"
-          style={{ transform: `translateY(${pullMoveY}px)` }}
-        >
-          {children}
-        </main>
-      </div>
-
-      {/* MOBILE NAV */}
-      <MobileNav />
+      {/* Scrollable Content - Animated with Pull */}
+      <main 
+        className="flex-1 p-4 md:p-10 w-full max-w-7xl mx-auto pb-24 md:pb-10 relative z-10 bg-[#fafafa] transition-transform duration-200 ease-out"
+        style={{ transform: `translateY(${pullMoveY}px)` }}
+      >
+        {children}
+      </main>
     </div>
   );
 };

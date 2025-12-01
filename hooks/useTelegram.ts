@@ -24,8 +24,8 @@ const mockTelegramWebApp = {
     impactOccurred: (style: string) => console.log(`Haptic ${style}`),
     notificationOccurred: (type: string) => console.log(`Haptic notification ${type}`)
   },
-  BackButton: null,
-  MainButton: null,
+  BackButton: { isVisible: false, show: () => {}, hide: () => {}, onClick: () => {}, offClick: () => {} },
+  MainButton: { isVisible: false, show: () => {}, hide: () => {}, onClick: () => {}, offClick: () => {} },
   onEvent: () => {},
   offEvent: () => {}
 };
@@ -49,12 +49,32 @@ const emptySnapshot: TelegramSnapshot = {
   mainButton: null
 };
 
-// Cached snapshot to avoid infinite loop in useSyncExternalStore
-let cachedSnapshot: TelegramSnapshot = emptySnapshot;
+// Singleton cache to ensure referential equality
+let cachedSnapshot: TelegramSnapshot | null = null;
 
 const getWebApp = () => {
   if (!isBrowser) return mockTelegramWebApp;
   return (window as any).Telegram?.WebApp || mockTelegramWebApp;
+};
+
+// Helper to create snapshot
+const createSnapshot = (app: any): TelegramSnapshot => ({
+  theme: app.themeParams ?? null,
+  backButton: app.BackButton ?? null,
+  mainButton: app.MainButton ?? null
+});
+
+const getSnapshot = (): TelegramSnapshot => {
+  if (!isBrowser) {
+    return emptySnapshot;
+  }
+  
+  // Initialize lazily once
+  if (!cachedSnapshot) {
+    cachedSnapshot = createSnapshot(getWebApp());
+  }
+  
+  return cachedSnapshot;
 };
 
 const subscribe = (callback: () => void) => {
@@ -65,38 +85,23 @@ const subscribe = (callback: () => void) => {
   const app = getWebApp();
   
   const handleChange = () => {
-    // Update cached snapshot when something changes
-    cachedSnapshot = {
-      theme: app.themeParams ?? null,
-      backButton: app.BackButton ?? null,
-      mainButton: app.MainButton ?? null
-    };
-    callback();
+    const newSnapshot = createSnapshot(app);
+    // Simple shallow comparison or JSON comparison to avoid unnecessary updates
+    if (JSON.stringify(newSnapshot) !== JSON.stringify(cachedSnapshot)) {
+      cachedSnapshot = newSnapshot;
+      callback();
+    }
   };
   
   app.onEvent?.("themeChanged", handleChange);
   app.onEvent?.("mainButtonClicked", handleChange);
   app.onEvent?.("backButtonClicked", handleChange);
 
-  // Initialize cache
-  cachedSnapshot = {
-    theme: app.themeParams ?? null,
-    backButton: app.BackButton ?? null,
-    mainButton: app.MainButton ?? null
-  };
-
   return () => {
     app.offEvent?.("themeChanged", handleChange);
     app.offEvent?.("mainButtonClicked", handleChange);
     app.offEvent?.("backButtonClicked", handleChange);
   };
-};
-
-const getSnapshot = (): TelegramSnapshot => {
-  if (!isBrowser) {
-    return emptySnapshot;
-  }
-  return cachedSnapshot;
 };
 
 const getServerSnapshot = (): TelegramSnapshot => emptySnapshot;
