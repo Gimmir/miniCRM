@@ -114,7 +114,7 @@ const StatsCard = ({
   const gradientId = isGreen ? "gradient-green" : "gradient-blue";
 
   return (
-    <div className="bg-white border border-slate-100/80 rounded-2xl p-4 md:p-5 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.02)] relative overflow-hidden group hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.06)] hover:border-slate-200 transition-all duration-300">
+    <div className="bg-white border border-slate-100/80 rounded-2xl p-4 md:p-5 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.02)] relative overflow-hidden group hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.06)] hover:border-slate-200 transition-all duration-300 z-0">
        <div className="relative z-10 flex flex-col h-full justify-between">
          <div className="flex justify-between items-start mb-2 md:mb-4">
             <span className="text-xs md:text-sm font-medium text-slate-500 truncate mr-2">{title}</span>
@@ -169,7 +169,7 @@ const QuickActionBtn = ({
         ? 'bg-blue-600 text-white shadow-blue-500/20 hover:shadow-blue-500/30' 
         : 'bg-white border border-slate-100 text-slate-900 hover:border-slate-200'
       }
-      active:scale-[0.98]
+      active:scale-[0.98] z-0
     `}>
       <div className={`
         p-2 rounded-xl mr-3 shrink-0 transition-transform group-hover:scale-110 duration-300
@@ -217,7 +217,7 @@ const ScheduleItem = ({
     <div 
       onClick={() => setIsExpanded(!isExpanded)}
       className={`
-        relative flex flex-col bg-white rounded-2xl mb-3 last:mb-0 transition-all duration-300 cursor-pointer overflow-hidden
+        relative flex flex-col bg-white rounded-2xl mb-3 last:mb-0 transition-all duration-300 cursor-pointer overflow-hidden z-0
         border border-slate-100 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.03)]
         ${isCancelled ? 'bg-slate-50/60' : 'hover:shadow-md hover:border-slate-200'}
         ${isExpanded ? 'ring-2 ring-blue-500/10' : ''}
@@ -369,8 +369,8 @@ export default function App() {
       {/* CONTENT AREA */}
       <div className="flex-1 w-full md:pl-72 flex flex-col min-w-0">
         
-        {/* Header */}
-        <header className="sticky top-0 z-10 bg-[#fafafa]/80 backdrop-blur-md border-b border-slate-200/60 px-4 py-3 md:px-8 md:py-5 flex items-center justify-between">
+        {/* Header - Sticky with High Z-Index & Better Opacity */}
+        <header className="sticky top-0 z-30 bg-[#fafafa]/95 backdrop-blur-md border-b border-slate-200/60 px-4 py-3 md:px-8 md:py-5 flex items-center justify-between">
           <div className="md:hidden flex items-center gap-3">
              <div className="h-9 w-9 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold shadow-md shadow-blue-600/20">
                 {user?.first_name?.[0]}
@@ -396,8 +396,8 @@ export default function App() {
           </div>
         </header>
 
-        {/* Scrollable Content */}
-        <main className="flex-1 p-4 md:p-10 w-full max-w-7xl mx-auto pb-24 md:pb-10">
+        {/* Scrollable Content - z-0 to stay under header */}
+        <main className="flex-1 p-4 md:p-10 w-full max-w-7xl mx-auto pb-24 md:pb-10 relative z-0">
           
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
             
