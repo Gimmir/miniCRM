@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { 
   UserPlus, 
   CalendarPlus, 
@@ -21,7 +21,9 @@ import {
   CheckCircle2,
   CalendarClock,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  RefreshCw, // Added for pull-to-refresh icon
+  Loader2    // Added for loading spinner
 } from 'lucide-react';
 
 /**
@@ -46,6 +48,9 @@ const mockTelegramWebApp = {
   },
   expand: () => console.log("Expanded"),
   ready: () => console.log("Ready"),
+  HapticFeedback: {
+    impactOccurred: (style: string) => console.log(`Haptic ${style}`)
+  }
 };
 
 // --- HOOKS ---
@@ -298,11 +303,66 @@ const ScheduleItem = ({
 // --- MAIN APP ---
 
 export default function App() {
-  const { user } = useTelegram();
+  const { user, webApp } = useTelegram();
   const [activeTab, setActiveTab] = useState('home');
   const [mounted, setMounted] = useState(false);
 
+  // --- PULL TO REFRESH STATE ---
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [pullStartY, setPullStartY] = useState(0);
+  const [pullMoveY, setPullMoveY] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => { setMounted(true); }, []);
+
+  // --- PULL TO REFRESH LOGIC ---
+  const handleTouchStart = (e: React.TouchEvent) => {
+    // Only enable pull if at the very top of the page
+    if (window.scrollY === 0) {
+      setPullStartY(e.touches[0].clientY);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (pullStartY === 0 || window.scrollY > 0) return;
+    
+    const currentY = e.touches[0].clientY;
+    const diff = currentY - pullStartY;
+
+    // Only allow pulling down (positive diff)
+    if (diff > 0) {
+      // Add resistance (dampening) so it feels elastic
+      const damped = Math.min(diff * 0.45, 120); 
+      setPullMoveY(damped);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (pullMoveY > 60) {
+      // Trigger Refresh
+      setIsRefreshing(true);
+      setPullMoveY(60); // Snap to loading position
+      
+      // Haptic Feedback if available
+      if (webApp?.HapticFeedback) {
+        webApp.HapticFeedback.impactOccurred('medium');
+      }
+
+      // Simulate API Call
+      setTimeout(() => {
+        setIsRefreshing(false);
+        setPullMoveY(0);
+        // Haptic Success
+        if (webApp?.HapticFeedback) {
+           webApp.HapticFeedback.notificationOccurred('success');
+        }
+      }, 2000);
+    } else {
+      // Cancel Pull
+      setPullMoveY(0);
+    }
+    setPullStartY(0);
+  };
 
   if (!mounted) return null;
 
@@ -316,7 +376,10 @@ export default function App() {
   return (
     <div 
       className="min-h-[100dvh] bg-[#fafafa] text-slate-900 font-sans flex overflow-x-hidden"
-      style={{ WebkitTapHighlightColor: 'transparent' }} // ВИМКНЕННЯ СІРОГО ФОНУ ПРИ НАТИСКАННІ
+      style={{ WebkitTapHighlightColor: 'transparent' }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
       
       {/* SIDEBAR (Desktop) */}
@@ -370,8 +433,33 @@ export default function App() {
       </aside>
 
       {/* CONTENT AREA */}
-      <div className="flex-1 w-full md:pl-72 flex flex-col min-w-0">
+      <div className="flex-1 w-full md:pl-72 flex flex-col min-w-0 relative">
         
+        {/* PULL TO REFRESH INDICATOR */}
+        <div 
+          className="absolute top-0 left-0 right-0 flex justify-center pointer-events-none z-0"
+          style={{ 
+            height: `${pullMoveY}px`,
+            opacity: pullMoveY > 0 ? 1 : 0,
+            transition: isRefreshing ? 'height 0.3s ease' : 'none'
+          }}
+        >
+           <div className="flex items-end pb-4">
+              {isRefreshing ? (
+                <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+              ) : (
+                <div className="flex flex-col items-center">
+                   <div 
+                     className="w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center border border-slate-100"
+                     style={{ transform: `rotate(${pullMoveY * 2}deg)` }}
+                   >
+                      <RefreshCw className="w-4 h-4 text-blue-600" />
+                   </div>
+                </div>
+              )}
+           </div>
+        </div>
+
         {/* Header */}
         <header className="sticky top-0 z-30 bg-[#fafafa]/95 backdrop-blur-md border-b border-slate-200/60 px-4 py-3 md:px-8 md:py-5 flex items-center justify-between">
           <div className="md:hidden flex items-center gap-3">
@@ -399,8 +487,11 @@ export default function App() {
           </div>
         </header>
 
-        {/* Scrollable Content */}
-        <main className="flex-1 p-4 md:p-10 w-full max-w-7xl mx-auto pb-24 md:pb-10 relative z-0">
+        {/* Scrollable Content - Animated with Pull */}
+        <main 
+          className="flex-1 p-4 md:p-10 w-full max-w-7xl mx-auto pb-24 md:pb-10 relative z-10 bg-[#fafafa] transition-transform duration-200 ease-out"
+          style={{ transform: `translateY(${pullMoveY}px)` }}
+        >
           
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
             
