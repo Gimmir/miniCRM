@@ -80,13 +80,13 @@ const useTelegram = () => {
 // --- COMPONENTS ---
 
 const SectionTitle = ({ title, action }: { title: string, action?: React.ReactNode }) => (
-  <div className="flex items-center justify-between px-1 mb-4">
+  <div className="flex items-center justify-between px-1 mb-3 md:mb-4">
     <h3 className="text-[11px] font-bold uppercase tracking-widest text-slate-400">{title}</h3>
     {action}
   </div>
 );
 
-// Оновлений бейдж статусу (Компактний)
+// Оновлений бейдж статусу
 const StatusIcon = ({ status }: { status: 'confirmed' | 'cancelled' }) => {
   if (status === 'cancelled') {
     return <XCircle className="w-5 h-5 text-red-500" />;
@@ -114,7 +114,7 @@ const StatsCard = ({
   const gradientId = isGreen ? "gradient-green" : "gradient-blue";
 
   return (
-    <div className="bg-white border border-slate-100/80 rounded-2xl p-4 md:p-5 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.02)] relative overflow-hidden group hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.06)] hover:border-slate-200 transition-all duration-300 z-0">
+    <div className="bg-white border border-slate-100/80 rounded-2xl p-4 md:p-5 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.02)] relative overflow-hidden group hover:border-slate-200 transition-all duration-300 z-0 select-none">
        <div className="relative z-10 flex flex-col h-full justify-between">
          <div className="flex justify-between items-start mb-2 md:mb-4">
             <span className="text-xs md:text-sm font-medium text-slate-500 truncate mr-2">{title}</span>
@@ -149,7 +149,7 @@ const StatsCard = ({
   );
 };
 
-// --- ACTION BUTTON (Compact & Horizontal) ---
+// --- ACTION BUTTON ---
 const QuickActionBtn = ({ 
   icon: Icon, 
   label, 
@@ -166,10 +166,10 @@ const QuickActionBtn = ({
     <button className={`
       relative flex items-center p-3 rounded-2xl transition-all duration-300 group w-full text-left shadow-sm
       ${isBlue 
-        ? 'bg-blue-600 text-white shadow-blue-500/20 hover:shadow-blue-500/30' 
-        : 'bg-white border border-slate-100 text-slate-900 hover:border-slate-200'
+        ? 'bg-blue-600 text-white shadow-blue-500/20 active:bg-blue-700' 
+        : 'bg-white border border-slate-100 text-slate-900 active:bg-slate-50'
       }
-      active:scale-[0.98] z-0
+      active:scale-[0.98] z-0 select-none
     `}>
       <div className={`
         p-2 rounded-xl mr-3 shrink-0 transition-transform group-hover:scale-110 duration-300
@@ -194,7 +194,7 @@ const QuickActionBtn = ({
   );
 }
 
-// --- NEW SCHEDULE ITEM (Accordion Design) ---
+// --- SCHEDULE ITEM ---
 const ScheduleItem = ({ 
   time, 
   endTime,
@@ -217,9 +217,9 @@ const ScheduleItem = ({
     <div 
       onClick={() => setIsExpanded(!isExpanded)}
       className={`
-        relative flex flex-col bg-white rounded-2xl mb-3 last:mb-0 transition-all duration-300 cursor-pointer overflow-hidden z-0
+        relative flex flex-col bg-white rounded-2xl mb-3 last:mb-0 transition-all duration-300 cursor-pointer overflow-hidden z-0 select-none
         border border-slate-100 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.03)]
-        ${isCancelled ? 'bg-slate-50/60' : 'hover:shadow-md hover:border-slate-200'}
+        ${isCancelled ? 'bg-slate-50/60' : 'active:bg-slate-50'}
         ${isExpanded ? 'ring-2 ring-blue-500/10' : ''}
       `}
     >
@@ -270,21 +270,21 @@ const ScheduleItem = ({
         <div className="flex gap-2">
             <button 
               onClick={(e) => { e.stopPropagation(); console.log('Call'); }}
-              className="flex-1 h-9 text-[11px] font-bold text-slate-600 bg-white hover:bg-green-50 hover:text-green-700 hover:border-green-200 border border-slate-200 rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm"
+              className="flex-1 h-9 text-[11px] font-bold text-slate-600 bg-white hover:bg-green-50 hover:text-green-700 hover:border-green-200 active:bg-green-50 active:border-green-200 border border-slate-200 rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm"
             >
               <Phone className="w-3.5 h-3.5" />
               <span>Дзвінок</span>
             </button>
             <button 
               onClick={(e) => { e.stopPropagation(); console.log('Message'); }}
-              className="flex-1 h-9 text-[11px] font-bold text-slate-600 bg-white hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 border border-slate-200 rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm"
+              className="flex-1 h-9 text-[11px] font-bold text-slate-600 bg-white hover:bg-blue-50 hover:text-blue-700 hover:border-blue-200 active:bg-blue-50 active:border-blue-200 border border-slate-200 rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm"
             >
               <MessageCircle className="w-3.5 h-3.5" />
               <span>Написати</span>
             </button>
             <button 
               onClick={(e) => { e.stopPropagation(); console.log('Reschedule'); }}
-              className="flex-1 h-9 text-[11px] font-bold text-slate-600 bg-white hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200 border border-slate-200 rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm"
+              className="flex-1 h-9 text-[11px] font-bold text-slate-600 bg-white hover:bg-amber-50 hover:text-amber-700 hover:border-amber-200 active:bg-amber-50 active:border-amber-200 border border-slate-200 rounded-xl flex items-center justify-center gap-1.5 transition-all active:scale-95 shadow-sm"
             >
               <CalendarClock className="w-3.5 h-3.5" />
               <span>Перенести</span>
@@ -314,7 +314,10 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#fafafa] text-slate-900 font-sans flex">
+    <div 
+      className="min-h-[100dvh] bg-[#fafafa] text-slate-900 font-sans flex overflow-x-hidden"
+      style={{ WebkitTapHighlightColor: 'transparent' }} // ВИМКНЕННЯ СІРОГО ФОНУ ПРИ НАТИСКАННІ
+    >
       
       {/* SIDEBAR (Desktop) */}
       <aside className="hidden md:flex flex-col w-72 bg-white border-r border-slate-100 fixed h-full z-20 shadow-[2px_0_24px_rgba(0,0,0,0.02)]">
@@ -369,7 +372,7 @@ export default function App() {
       {/* CONTENT AREA */}
       <div className="flex-1 w-full md:pl-72 flex flex-col min-w-0">
         
-        {/* Header - Sticky with High Z-Index & Better Opacity */}
+        {/* Header */}
         <header className="sticky top-0 z-30 bg-[#fafafa]/95 backdrop-blur-md border-b border-slate-200/60 px-4 py-3 md:px-8 md:py-5 flex items-center justify-between">
           <div className="md:hidden flex items-center gap-3">
              <div className="h-9 w-9 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold shadow-md shadow-blue-600/20">
@@ -396,7 +399,7 @@ export default function App() {
           </div>
         </header>
 
-        {/* Scrollable Content - z-0 to stay under header */}
+        {/* Scrollable Content */}
         <main className="flex-1 p-4 md:p-10 w-full max-w-7xl mx-auto pb-24 md:pb-10 relative z-0">
           
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
@@ -404,7 +407,7 @@ export default function App() {
             {/* Left Column (Stats & Actions) */}
             <div className="xl:col-span-2 space-y-8 min-w-0">
                
-               {/* Actions (Horizontal Compact) */}
+               {/* Actions */}
                <div className="grid grid-cols-2 gap-3 md:gap-6">
                   <QuickActionBtn 
                     icon={UserPlus}
@@ -420,7 +423,7 @@ export default function App() {
                   />
                </div>
 
-               {/* Stats (Updated Design: 2 columns on mobile) */}
+               {/* Stats */}
                <div>
                   <SectionTitle title="Огляд за тиждень" />
                   <div className="grid grid-cols-2 gap-3 md:gap-6">
@@ -488,7 +491,7 @@ export default function App() {
            <button 
              key={item.id}
              onClick={() => setActiveTab(item.id)}
-             className={`flex-1 flex flex-col items-center justify-center gap-1.5 transition-all duration-300 active:scale-95 ${
+             className={`flex-1 flex flex-col items-center justify-center gap-1.5 transition-all duration-300 active:scale-95 select-none ${
                 activeTab === item.id ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'
              }`}
            >
