@@ -1,19 +1,33 @@
-import type { Metadata } from 'next';
-import '../styles/globals.css';
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { cn } from "@/lib/utils";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter"
+});
 
 export const metadata: Metadata = {
-    title: 'Mini CRM',
-    description: 'Telegram-friendly CRM dashboard',
+  title: "miniCRM – Telegram Mini App",
+  description: "Base shell for the miniCRM Telegram Mini App."
 };
 
 export default function RootLayout({
-    children,
-}: Readonly<{
-    children: React.ReactNode;
-}>) {
-    return (
-        <html lang="uk">
-            <body>{children}</body>
-        </html>
-    );
+  children
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="uk" data-mode="dark">
+      <body
+        className={cn(
+          "min-h-screen bg-telegram-surface text-white antialiased",
+          inter.variable
+        )}
+      >
+        {children}
+      </body>
+    </html>
+  );
 }

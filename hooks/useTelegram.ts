@@ -1,109 +1,68 @@
-"use client";
+import { useEffect, useMemo, useSyncExternalStore } from "react";
+import WebApp from "@twa-dev/sdk";
+import type { BackButton, MainButton, ThemeParams } from "@twa-dev/types";
 
-import { useEffect, useState } from "react";
-
-export interface TelegramUser {
-    id: number;
-    first_name: string;
-    last_name?: string;
-    username?: string;
-    language_code?: string;
-    is_premium?: boolean;
-    photo_url?: string;
-}
-
-interface TelegramWebApp {
-    ready: () => void;
-    expand: () => void;
-    enableClosingConfirmation: () => void;
-    colorScheme: "light" | "dark";
-    themeParams: Record<string, string>;
-    initDataUnsafe: {
-        user?: TelegramUser;
-    };
-    onEvent: (eventType: string, callback: () => void) => void;
-    offEvent: (eventType: string, callback: () => void) => void;
-}
-
-const mockWebApp: TelegramWebApp = {
-    ready: () => console.info("[MiniCRM] WebApp ready (mock)"),
-    expand: () => console.info("[MiniCRM] WebApp expand (mock)"),
-    enableClosingConfirmation: () =>
-        console.info("[MiniCRM] Closing confirmation enabled (mock)"),
-    colorScheme: "light",
-    themeParams: {
-        bg_color: "#ffffff",
-        secondary_bg_color: "#f3f4f6",
-        text_color: "#000000",
-        hint_color: "#9ca3af",
-        button_color: "#3b82f6",
-        button_text_color: "#ffffff",
-    },
-    initDataUnsafe: {
-        user: {
-            id: 1,
-            first_name: "Олексій",
-            last_name: "Dev",
-            username: "alex_dev",
-        },
-    },
-    onEvent: () => {},
-    offEvent: () => {},
+type TelegramSnapshot = {
+  theme: ThemeParams | null;
+  backButton: BackButton | null;
+  mainButton: MainButton | null;
 };
 
-export interface UseTelegramReturn {
-    webApp: TelegramWebApp | null;
-    user: TelegramUser | null;
-    isReady: boolean;
-    colorScheme: "light" | "dark";
-    themeParams: Record<string, string>;
-}
+const isBrowser = typeof window !== "undefined";
+const emptySnapshot: TelegramSnapshot = {
+  theme: null,
+  backButton: null,
+  mainButton: null
+};
 
-export function useTelegram(): UseTelegramReturn {
-    const [isReady, setIsReady] = useState(false);
-    const [user, setUser] = useState<TelegramUser | null>(null);
-    const [colorScheme, setColorScheme] = useState<"light" | "dark">("light");
-    const [webApp, setWebApp] = useState<TelegramWebApp | null>(null);
-    const [themeParams, setThemeParams] = useState<Record<string, string>>(
-        mockWebApp.themeParams
-    );
+const subscribe = (callback: () => void) => {
+  if (!isBrowser) {
+    return () => undefined;
+  }
 
-    useEffect(() => {
-        if (typeof window === "undefined") return;
+  WebApp.onEvent("themeChanged", callback);
+  WebApp.onEvent("mainButtonClicked", callback);
+  WebApp.onEvent("backButtonClicked", callback);
 
-        const WebApp: TelegramWebApp =
-            ((window as any)?.Telegram?.WebApp as TelegramWebApp) ?? mockWebApp;
+  return () => {
+    WebApp.offEvent("themeChanged", callback);
+    WebApp.offEvent("mainButtonClicked", callback);
+    WebApp.offEvent("backButtonClicked", callback);
+  };
+};
 
-        WebApp.ready?.();
-        WebApp.expand?.();
-        WebApp.enableClosingConfirmation?.();
+const getSnapshot = (): TelegramSnapshot => {
+  if (!isBrowser) {
+    return emptySnapshot;
+  }
 
-        if (WebApp.initDataUnsafe?.user) {
-            setUser(WebApp.initDataUnsafe.user);
-        }
+  return {
+    theme: WebApp.themeParams ?? null,
+    backButton: WebApp.BackButton ?? null,
+    mainButton: WebApp.MainButton ?? null
+  };
+};
 
-        setColorScheme(WebApp.colorScheme || "light");
-        setThemeParams(WebApp.themeParams || {});
-        setWebApp(WebApp);
+export function useTelegram() {
+  const state = useSyncExternalStore(subscribe, getSnapshot, () => emptySnapshot);
 
-        const handleThemeChange = () => {
-            setColorScheme(WebApp.colorScheme || "light");
-            setThemeParams(WebApp.themeParams || {});
-        };
+  useEffect(() => {
+    if (!isBrowser) {
+      return;
+    }
 
-        WebApp.onEvent?.("themeChanged", handleThemeChange);
-        setIsReady(true);
+    WebApp.ready();
+    WebApp.expand();
+  }, []);
 
-        return () => {
-            WebApp.offEvent?.("themeChanged", handleThemeChange);
-        };
-    }, []);
+  const ready = isBrowser && typeof WebApp.initDataUnsafe !== "undefined";
 
-    return {
-        webApp,
-        user,
-        isReady,
-        colorScheme,
-        themeParams,
-    };
+  return useMemo(
+    () => ({
+      webApp: WebApp,
+      ready,
+      state
+    }),
+    [ready, state]
+  );
 }
