@@ -10,60 +10,18 @@ import {
     Settings,
     Search,
     Bell,
-    Clock,
     Phone,
     MessageCircle
 } from 'lucide-react';
+import { useTelegram } from '@/hooks/useTelegram';
 
-/**
- * MOCK TELEGRAM WEB APP
- */
-const mockTelegramWebApp = {
-    initDataUnsafe: {
-        user: {
-            first_name: "Олексій",
-            last_name: "Dev",
-            username: "alex_dev",
-        }
-    },
-    themeParams: {
-        bg_color: "#ffffff",
-        secondary_bg_color: "#f3f4f6",
-        text_color: "#000000",
-        hint_color: "#9ca3af",
-        button_color: "#3b82f6",
-        button_text_color: "#ffffff",
-        header_bg_color: "#ffffff"
-    },
-    expand: () => console.log("Expanded"),
-    ready: () => console.log("Ready"),
-};
-
-// --- HOOKS ---
-const useTelegram = () => {
-    const [webApp, setWebApp] = useState<any>(null);
-    const [user, setUser] = useState<any>(null);
-
-    useEffect(() => {
-        const app = (window as any).Telegram?.WebApp || mockTelegramWebApp;
-        if (app) {
-            app.ready();
-            app.expand();
-            setWebApp(app);
-            setUser(app.initDataUnsafe?.user);
-
-            const root = document.documentElement;
-            const params = app.themeParams;
-            root.style.setProperty('--tg-bg', params.bg_color || '#ffffff');
-            root.style.setProperty('--tg-secondary-bg', params.secondary_bg_color || '#f3f4f6');
-            root.style.setProperty('--tg-text', params.text_color || '#000000');
-            root.style.setProperty('--tg-hint', params.hint_color || '#9ca3af');
-            root.style.setProperty('--tg-button', params.button_color || '#3b82f6');
-            root.style.setProperty('--tg-button-text', params.button_text_color || '#ffffff');
-        }
-    }, []);
-
-    return { webApp, user };
+const DEFAULT_THEME = {
+    bg_color: '#ffffff',
+    secondary_bg_color: '#f3f4f6',
+    text_color: '#000000',
+    hint_color: '#9ca3af',
+    button_color: '#3b82f6',
+    button_text_color: '#ffffff',
 };
 
 // --- COMPONENTS ---
@@ -157,11 +115,22 @@ const ScheduleItem = ({
 // --- MAIN APP ---
 
 export default function App() {
-    const { user } = useTelegram();
+    const { user, themeParams } = useTelegram();
     const [activeTab, setActiveTab] = useState('home');
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => { setMounted(true); }, []);
+    useEffect(() => {
+        if (typeof document === 'undefined') return;
+        const root = document.documentElement;
+        const params = { ...DEFAULT_THEME, ...themeParams };
+        root.style.setProperty('--tg-bg', params.bg_color);
+        root.style.setProperty('--tg-secondary-bg', params.secondary_bg_color);
+        root.style.setProperty('--tg-text', params.text_color);
+        root.style.setProperty('--tg-hint', params.hint_color);
+        root.style.setProperty('--tg-button', params.button_color);
+        root.style.setProperty('--tg-button-text', params.button_text_color);
+    }, [themeParams]);
 
     if (!mounted) return null;
 
