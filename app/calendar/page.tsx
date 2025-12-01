@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -8,6 +8,10 @@ import {
   CalendarClock,
   Phone,
   MessageCircle,
+  Calendar as CalendarIcon,
+  Clock,
+  CheckCircle2,
+  XCircle,
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
@@ -18,11 +22,9 @@ import { AppShell } from '@/components/layout';
 const monthNames = ["Січень", "Лютий", "Березень", "Квітень", "Травень", "Червень", "Липень", "Серпень", "Вересень", "Жовтень", "Листопад", "Грудень"];
 const weekDays = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Нд"];
 
-// Допоміжна функція для отримання днів тижня для вибраної дати
 const getWeekDaysForSelected = (date: Date) => {
   const start = new Date(date);
   const day = start.getDay(); 
-  // Коригування для початку тижня з понеділка
   const diff = start.getDate() - (day === 0 ? 6 : day - 1); 
   const monday = new Date(start);
   monday.setDate(diff);
@@ -36,12 +38,11 @@ const getWeekDaysForSelected = (date: Date) => {
   return week;
 };
 
-// Мок подій
 const hasEvent = (day: number, month: number) => {
   return [3, 8, 12, 15, 22, 28].includes(day); 
 };
 
-// --- SUB-COMPONENTS (Local versions) ---
+// --- SUB-COMPONENTS ---
 
 const ScheduleItem = ({ 
   time, 
@@ -136,7 +137,7 @@ const ScheduleItem = ({
   );
 };
 
-// --- MAIN CALENDAR PAGE COMPONENT ---
+// --- MAIN PAGE ---
 
 export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -173,206 +174,226 @@ export default function CalendarPage() {
     }
   };
 
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  // SWIPE LOGIC
+  const [touchStart, setTouchStart] = useState<{ x: number, y: number } | null>(null);
   const minSwipeDistance = 50;
 
   const onTouchStart = (e: React.TouchEvent) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
+    setTouchStart({ x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY });
   };
 
-  const onTouchMove = (e: React.TouchEvent) => setTouchEnd(e.targetTouches[0].clientX);
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStart) return;
+    
+    const touchEnd = { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
+    const distanceX = touchStart.x - touchEnd.x;
+    const distanceY = touchStart.y - touchEnd.y;
 
-  const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
-    if (distance > minSwipeDistance) handleNext();
-    if (distance < -minSwipeDistance) handlePrev();
+    // Detect horizontal swipe (for calendar navigation)
+    if (Math.abs(distanceX) > minSwipeDistance && Math.abs(distanceX) > Math.abs(distanceY)) {
+      if (distanceX > 0) handleNext(); // Swipe Left
+      else handlePrev(); // Swipe Right
+    } 
+    // Detect vertical swipe (for expand/collapse) primarily on the calendar area
+    else if (Math.abs(distanceY) > minSwipeDistance && Math.abs(distanceY) > Math.abs(distanceX)) {
+       // Optional: Add logic to expand/collapse on vertical swipe if desired
+       // For now, we rely on the handle click
+    }
+    
+    setTouchStart(null);
   };
 
   return (
     <AppShell title="Календар">
-      <div className="animate-in fade-in duration-500">
+      <div className="animate-in fade-in duration-500 pb-20">
       
         {/* Calendar Card */}
         <div 
-          className="bg-white rounded-2xl shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 p-4 mb-6 relative z-20"
+          className="bg-white rounded-b-[2rem] shadow-[0_8px_30px_-12px_rgba(0,0,0,0.08)] border-b border-x border-slate-100 -mx-4 -mt-4 pt-2 pb-4 px-4 mb-6 relative z-20 overflow-hidden touch-pan-y" 
+          // `touch-pan-y` allows vertical scroll but captures horizontal swipes better
           onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
         >
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4 px-1">
-          <button onClick={handlePrev} className="p-2 hover:bg-slate-50 rounded-full transition-colors text-slate-500 active:scale-90">
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          
-          <div className="flex flex-col items-center leading-none cursor-pointer select-none" onClick={() => setIsExpanded(!isExpanded)}>
-            <h2 className="text-lg font-bold text-slate-900 capitalize flex items-center gap-2">
-              {monthNames[isExpanded ? currentDate.getMonth() : selectedDate.getMonth()]}
-              {!isExpanded && <span className="text-slate-400 text-sm font-medium">Тиждень</span>}
-            </h2>
-            <span className="text-xs text-slate-400 font-medium">
-              {isExpanded ? currentDate.getFullYear() : selectedDate.getFullYear()}
-            </span>
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6 px-1">
+            <button 
+              onClick={handlePrev} 
+              className="w-10 h-10 flex items-center justify-center hover:bg-slate-50 rounded-full transition-colors text-slate-500 active:scale-90 active:bg-slate-100"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </button>
+            
+            <div 
+              className="flex flex-col items-center cursor-pointer select-none active:opacity-70 transition-opacity" 
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
+              <h2 className="text-xl font-bold text-slate-900 capitalize flex items-center gap-2">
+                {monthNames[isExpanded ? currentDate.getMonth() : selectedDate.getMonth()]}
+              </h2>
+              <span className="text-xs font-semibold text-slate-400 tracking-wide">
+                {isExpanded ? currentDate.getFullYear() : selectedDate.getFullYear()}
+              </span>
+            </div>
+
+            <button 
+              onClick={handleNext} 
+              className="w-10 h-10 flex items-center justify-center hover:bg-slate-50 rounded-full transition-colors text-slate-500 active:scale-90 active:bg-slate-100"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </button>
           </div>
 
-          <button onClick={handleNext} className="p-2 hover:bg-slate-50 rounded-full transition-colors text-slate-500 active:scale-90">
-            <ChevronRight className="w-5 h-5" />
-          </button>
+          {/* Days Header */}
+          <div className="grid grid-cols-7 mb-3 place-items-center">
+            {weekDays.map(day => (
+              <div key={day} className="text-center text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-full">
+                {day}
+              </div>
+            ))}
+          </div>
+
+          {/* --- ANIMATED GRID CONTAINER --- */}
+          <div 
+            className="relative overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]"
+            style={{ 
+              height: isExpanded ? '300px' : '50px' // Fixed heights for smoother animation
+            }}
+          >
+            {isExpanded ? (
+              // MONTH VIEW
+              <div className="grid grid-cols-7 gap-y-1 place-items-center animate-in fade-in duration-300 w-full absolute top-0 left-0 right-0">
+                {Array.from({ length: startingDayIndex }).map((_, i) => <div key={`empty-${i}`} className="w-full" />)}
+                {Array.from({ length: daysInMonth }).map((_, i) => {
+                  const day = i + 1;
+                  const isSelected = selectedDate.getDate() === day && selectedDate.getMonth() === currentDate.getMonth();
+                  const isToday = new Date().getDate() === day && new Date().getMonth() === currentDate.getMonth();
+                  
+                  return (
+                    <div key={day} className="w-full flex justify-center py-1">
+                      <button
+                        onClick={() => setSelectedDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), day))}
+                        className={`
+                          w-9 h-9 flex items-center justify-center rounded-full text-sm font-medium transition-all relative
+                          ${isSelected 
+                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30 scale-100' 
+                            : isToday 
+                              ? 'text-blue-600 bg-blue-50 font-bold border border-blue-100'
+                              : 'text-slate-700 hover:bg-slate-50 active:bg-slate-100 active:scale-90'
+                          }
+                        `}
+                      >
+                        {day}
+                        {hasEvent(day, currentDate.getMonth()) && !isSelected && (
+                          <div className="absolute bottom-1 w-1 h-1 bg-blue-400 rounded-full"></div>
+                        )}
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              // WEEK VIEW
+              <div className="grid grid-cols-7 gap-y-1 place-items-center animate-in fade-in duration-300 w-full absolute top-0 left-0 right-0">
+                 {getWeekDaysForSelected(selectedDate).map((date, i) => {
+                   const day = date.getDate();
+                   const isSelected = selectedDate.getDate() === day;
+                   const isToday = new Date().getDate() === day && new Date().getMonth() === date.getMonth();
+
+                   return (
+                    <div key={i} className="w-full flex justify-center py-1">
+                      <button
+                        onClick={() => {
+                          setSelectedDate(date);
+                          if (date.getMonth() !== currentDate.getMonth()) {
+                             setCurrentDate(new Date(date.getFullYear(), date.getMonth(), 1));
+                          }
+                        }}
+                        className={`
+                          w-9 h-9 flex items-center justify-center rounded-full text-sm font-medium transition-all relative
+                          ${isSelected 
+                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30 scale-100' 
+                            : isToday 
+                              ? 'text-blue-600 bg-blue-50 font-bold border border-blue-100'
+                              : 'text-slate-700 hover:bg-slate-50 active:bg-slate-100 active:scale-90'
+                          }
+                        `}
+                      >
+                        <span>{day}</span>
+                        {hasEvent(day, date.getMonth()) && !isSelected && (
+                          <div className="absolute bottom-1 w-1 h-1 bg-blue-400 rounded-full"></div>
+                        )}
+                      </button>
+                    </div>
+                   );
+                 })}
+              </div>
+            )}
+          </div>
+
+          {/* Expand Handle (Draggable Area) */}
+          <div 
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="w-full flex items-center justify-center pt-4 pb-2 -mb-2 cursor-pointer active:opacity-50 touch-none"
+            style={{ touchAction: 'none' }} // Prevents page scroll when dragging handle
+          >
+             <div className="w-10 h-1 bg-slate-200 rounded-full transition-colors group-hover:bg-slate-300"></div>
+          </div>
         </div>
 
-        {/* Days Header */}
-        <div className="grid grid-cols-7 mb-2 place-items-center">
-          {weekDays.map(day => (
-            <div key={day} className="text-center text-[10px] font-bold text-slate-400 uppercase tracking-wider py-1 w-full">
-              {day}
-            </div>
-          ))}
-        </div>
+        {/* --- AGENDA SECTION --- */}
+        <div className="space-y-4 px-1">
+          <div className="flex items-center justify-between">
+             <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wide">
+               {selectedDate.getDate()} {monthNames[selectedDate.getMonth()]}
+             </h3>
+             <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-3 shadow-md shadow-blue-500/20 active:scale-95 transition-all">
+               <Plus className="w-5 h-5" />
+             </button>
+          </div>
 
-        {/* --- ANIMATED GRID CONTAINER --- */}
-        <div 
-          className="relative overflow-hidden transition-all duration-500 ease-in-out"
-          style={{ 
-            maxHeight: isExpanded ? '350px' : '52px' // 52px approx height of one row
-          }}
-        >
-          {isExpanded ? (
-            // MONTH VIEW
-            <div className="grid grid-cols-7 gap-y-2 place-items-center animate-in fade-in duration-300">
-              {Array.from({ length: startingDayIndex }).map((_, i) => <div key={`empty-${i}`} className="w-full" />)}
-              {Array.from({ length: daysInMonth }).map((_, i) => {
-                const day = i + 1;
-                const isSelected = selectedDate.getDate() === day && selectedDate.getMonth() === currentDate.getMonth();
-                const isToday = new Date().getDate() === day && new Date().getMonth() === currentDate.getMonth();
-                
-                return (
-                  <div key={day} className="w-full flex justify-center">
-                    <button
-                      onClick={() => setSelectedDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), day))}
-                      className={`
-                        w-full max-w-[36px] aspect-square flex items-center justify-center rounded-xl text-sm font-medium transition-all relative
-                        ${isSelected 
-                          ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30' 
-                          : isToday 
-                            ? 'text-blue-600 bg-blue-50 font-bold border border-blue-100'
-                            : 'text-slate-700 hover:bg-slate-50 active:bg-slate-100'
-                        }
-                      `}
-                    >
-                      {day}
-                      {hasEvent(day, currentDate.getMonth()) && !isSelected && (
-                        <div className="absolute bottom-1 w-1 h-1 bg-blue-400 rounded-full"></div>
-                      )}
-                    </button>
+          {/* Schedule List */}
+          <div className="flex flex-col pb-safe">
+             {hasEvent(selectedDate.getDate(), selectedDate.getMonth()) ? (
+               <div className="animate-in slide-in-from-bottom-2 fade-in duration-300 space-y-3">
+                 <ScheduleItem 
+                   time="09:00" 
+                   endTime="10:00" 
+                   title="Стрижка" 
+                   client="Іван П." 
+                   status="confirmed" 
+                   price="400 ₴" 
+                 />
+                 <ScheduleItem 
+                   time="11:30" 
+                   endTime="13:00" 
+                   title="Фарбування" 
+                   client="Анна М." 
+                   status="confirmed" 
+                   price="2500 ₴" 
+                 />
+                 <ScheduleItem 
+                   time="14:00" 
+                   endTime="14:45" 
+                   title="Консультація" 
+                   client="Олена К." 
+                   status="cancelled" 
+                   price="0 ₴" 
+                 />
+               </div>
+             ) : (
+               <div className="flex flex-col items-center justify-center p-10 bg-white border border-dashed border-slate-200 rounded-2xl text-center shadow-sm mt-2 animate-in zoom-in-95 duration-300">
+                  <div className="bg-slate-50 p-4 rounded-full mb-3">
+                     <CalendarClock className="w-8 h-8 text-slate-300" />
                   </div>
-                );
-              })}
-            </div>
-          ) : (
-            // WEEK VIEW - FIXED: Removed absolute positioning, added w-full
-            <div className="grid grid-cols-7 gap-y-2 place-items-center animate-in fade-in duration-300 w-full">
-               {getWeekDaysForSelected(selectedDate).map((date, i) => {
-                 const day = date.getDate();
-                 const isSelected = selectedDate.getDate() === day;
-                 const isToday = new Date().getDate() === day && new Date().getMonth() === date.getMonth();
-
-                 return (
-                  <div key={i} className="w-full flex justify-center">
-                    <button
-                      onClick={() => {
-                        setSelectedDate(date);
-                        if (date.getMonth() !== currentDate.getMonth()) {
-                           setCurrentDate(new Date(date.getFullYear(), date.getMonth(), 1));
-                        }
-                      }}
-                      className={`
-                        w-full max-w-[36px] aspect-square flex items-center justify-center rounded-xl text-sm font-medium transition-all relative
-                        ${isSelected 
-                          ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30' 
-                          : isToday 
-                            ? 'text-blue-600 bg-blue-50 font-bold border border-blue-100'
-                            : 'text-slate-700 hover:bg-slate-50 active:bg-slate-100'
-                        }
-                      `}
-                    >
-                      <span>{day}</span>
-                      {hasEvent(day, date.getMonth()) && !isSelected && (
-                        <div className="absolute bottom-1 w-1 h-1 bg-blue-400 rounded-full"></div>
-                      )}
-                    </button>
-                  </div>
-                 );
-               })}
-            </div>
-          )}
+                  <p className="text-slate-500 font-medium text-sm">Немає записів</p>
+                  <p className="text-slate-400 text-xs mt-1 max-w-[200px]">На цей день нічого не заплановано.</p>
+                  <button className="mt-4 text-xs font-bold text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg transition-colors">
+                    + Додати запис
+                  </button>
+               </div>
+             )}
+          </div>
         </div>
-
-        {/* Expand Handle */}
-        <button 
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full flex items-center justify-center pt-4 pb-1 -mb-3 opacity-40 hover:opacity-100 transition-opacity active:scale-95"
-        >
-           <div className={`w-10 h-1 bg-slate-300 rounded-full transition-colors ${isExpanded ? 'bg-slate-400' : ''}`}></div>
-        </button>
-      </div>
-
-      {/* --- AGENDA SECTION --- */}
-      <div className="space-y-4 px-1">
-        <div className="flex items-center justify-between">
-           <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wide">
-             Розклад на {selectedDate.getDate()} {monthNames[selectedDate.getMonth()]}
-           </h3>
-           <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg p-1.5 shadow-sm active:scale-95 transition-all">
-             <Plus className="w-4 h-4" />
-           </button>
-        </div>
-
-        {/* Schedule List */}
-        <div className="flex flex-col pb-safe">
-           {hasEvent(selectedDate.getDate(), selectedDate.getMonth()) ? (
-             <div className="animate-in slide-in-from-bottom-2 fade-in duration-300 space-y-3">
-               <ScheduleItem 
-                 time="09:00" 
-                 endTime="10:00" 
-                 title="Стрижка" 
-                 client="Іван П." 
-                 status="confirmed" 
-                 price="400 ₴" 
-               />
-               <ScheduleItem 
-                 time="11:30" 
-                 endTime="13:00" 
-                 title="Фарбування" 
-                 client="Анна М." 
-                 status="confirmed" 
-                 price="2500 ₴" 
-               />
-               <ScheduleItem 
-                 time="14:00" 
-                 endTime="14:45" 
-                 title="Консультація" 
-                 client="Олена К." 
-                 status="cancelled" 
-                 price="0 ₴" 
-               />
-             </div>
-           ) : (
-             <div className="flex flex-col items-center justify-center p-10 bg-white border border-dashed border-slate-200 rounded-2xl text-center shadow-sm mt-2 animate-in zoom-in-95 duration-300">
-                <div className="bg-slate-50 p-4 rounded-full mb-3">
-                   <CalendarClock className="w-8 h-8 text-slate-300" />
-                </div>
-                <p className="text-slate-500 font-medium text-sm">Немає записів</p>
-                <p className="text-slate-400 text-xs mt-1 max-w-[200px]">На цей день нічого не заплановано.</p>
-                <button className="mt-4 text-xs font-bold text-blue-600 hover:bg-blue-50 px-4 py-2 rounded-lg transition-colors">
-                  + Додати запис
-                </button>
-             </div>
-           )}
-        </div>
-      </div>
       </div>
     </AppShell>
   );
