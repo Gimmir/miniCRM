@@ -1,11 +1,45 @@
-import { useEffect, useMemo, useSyncExternalStore } from "react";
-import WebApp from "@twa-dev/sdk";
-import type { BackButton, MainButton, ThemeParams } from "@twa-dev/types";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+
+// --- MOCK TELEGRAM WEB APP ---
+const mockTelegramWebApp = {
+  initDataUnsafe: {
+    user: {
+      first_name: "Олексій",
+      last_name: "Dev",
+      username: "alex_dev",
+    }
+  },
+  themeParams: {
+    bg_color: "#ffffff",
+    secondary_bg_color: "#f3f4f6",
+    text_color: "#000000",
+    hint_color: "#9ca3af",
+    button_color: "#3b82f6",
+    button_text_color: "#ffffff",
+    header_bg_color: "#ffffff"
+  },
+  expand: () => console.log("Expanded"),
+  ready: () => console.log("Ready"),
+  HapticFeedback: {
+    impactOccurred: (style: string) => console.log(`Haptic ${style}`),
+    notificationOccurred: (type: string) => console.log(`Haptic notification ${type}`)
+  },
+  BackButton: null,
+  MainButton: null,
+  onEvent: () => {},
+  offEvent: () => {}
+};
+
+export type TelegramUser = {
+  first_name?: string;
+  last_name?: string;
+  username?: string;
+};
 
 type TelegramSnapshot = {
-  theme: ThemeParams | null;
-  backButton: BackButton | null;
-  mainButton: MainButton | null;
+  theme: typeof mockTelegramWebApp.themeParams | null;
+  backButton: typeof mockTelegramWebApp.BackButton | null;
+  mainButton: typeof mockTelegramWebApp.MainButton | null;
 };
 
 const isBrowser = typeof window !== "undefined";
@@ -15,19 +49,46 @@ const emptySnapshot: TelegramSnapshot = {
   mainButton: null
 };
 
+// Cached snapshot to avoid infinite loop in useSyncExternalStore
+let cachedSnapshot: TelegramSnapshot = emptySnapshot;
+
+const getWebApp = () => {
+  if (!isBrowser) return mockTelegramWebApp;
+  return (window as any).Telegram?.WebApp || mockTelegramWebApp;
+};
+
 const subscribe = (callback: () => void) => {
   if (!isBrowser) {
     return () => undefined;
   }
 
-  WebApp.onEvent("themeChanged", callback);
-  WebApp.onEvent("mainButtonClicked", callback);
-  WebApp.onEvent("backButtonClicked", callback);
+  const app = getWebApp();
+  
+  const handleChange = () => {
+    // Update cached snapshot when something changes
+    cachedSnapshot = {
+      theme: app.themeParams ?? null,
+      backButton: app.BackButton ?? null,
+      mainButton: app.MainButton ?? null
+    };
+    callback();
+  };
+  
+  app.onEvent?.("themeChanged", handleChange);
+  app.onEvent?.("mainButtonClicked", handleChange);
+  app.onEvent?.("backButtonClicked", handleChange);
+
+  // Initialize cache
+  cachedSnapshot = {
+    theme: app.themeParams ?? null,
+    backButton: app.BackButton ?? null,
+    mainButton: app.MainButton ?? null
+  };
 
   return () => {
-    WebApp.offEvent("themeChanged", callback);
-    WebApp.offEvent("mainButtonClicked", callback);
-    WebApp.offEvent("backButtonClicked", callback);
+    app.offEvent?.("themeChanged", handleChange);
+    app.offEvent?.("mainButtonClicked", handleChange);
+    app.offEvent?.("backButtonClicked", handleChange);
   };
 };
 
@@ -35,34 +96,48 @@ const getSnapshot = (): TelegramSnapshot => {
   if (!isBrowser) {
     return emptySnapshot;
   }
-
-  return {
-    theme: WebApp.themeParams ?? null,
-    backButton: WebApp.BackButton ?? null,
-    mainButton: WebApp.MainButton ?? null
-  };
+  return cachedSnapshot;
 };
 
+const getServerSnapshot = (): TelegramSnapshot => emptySnapshot;
+
 export function useTelegram() {
-  const state = useSyncExternalStore(subscribe, getSnapshot, () => emptySnapshot);
+  const [user, setUser] = useState<TelegramUser | null>(null);
+  const state = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   useEffect(() => {
     if (!isBrowser) {
       return;
     }
 
-    WebApp.ready();
-    WebApp.expand();
+    const app = getWebApp();
+    app.ready?.();
+    app.expand?.();
+    setUser(app.initDataUnsafe?.user ?? null);
+
+    // Apply theme CSS variables
+    const root = document.documentElement;
+    const params = app.themeParams;
+    if (params) {
+      root.style.setProperty('--tg-bg', params.bg_color || '#ffffff');
+      root.style.setProperty('--tg-secondary-bg', params.secondary_bg_color || '#f3f4f6');
+      root.style.setProperty('--tg-text', params.text_color || '#000000');
+      root.style.setProperty('--tg-hint', params.hint_color || '#9ca3af');
+      root.style.setProperty('--tg-button', params.button_color || '#3b82f6');
+      root.style.setProperty('--tg-button-text', params.button_text_color || '#ffffff');
+    }
   }, []);
 
-  const ready = isBrowser && typeof WebApp.initDataUnsafe !== "undefined";
+  const webApp = getWebApp();
+  const ready = isBrowser && typeof webApp.initDataUnsafe !== "undefined";
 
   return useMemo(
     () => ({
-      webApp: WebApp,
+      webApp,
+      user,
       ready,
       state
     }),
-    [ready, state]
+    [webApp, user, ready, state]
   );
 }
