@@ -6,12 +6,13 @@ import { ScheduleItem, ScheduleItemProps } from './ScheduleItem';
 import { SectionTitle } from '../ui/SectionTitle';
 
 interface ScheduleListProps {
-  items: Omit<ScheduleItemProps, 'onCall' | 'onMessage' | 'onReschedule'>[];
+  items: Omit<ScheduleItemProps, 'onCall' | 'onMessage' | 'onReschedule' | 'onDetails'>[];
   title?: string;
   onViewAll?: () => void;
   onItemCall?: (item: ScheduleItemProps) => void;
   onItemMessage?: (item: ScheduleItemProps) => void;
   onItemReschedule?: (item: ScheduleItemProps) => void;
+  onItemDetails?: (item: ScheduleItemProps) => void;
 }
 
 export const ScheduleList = ({
@@ -20,7 +21,8 @@ export const ScheduleList = ({
   onViewAll,
   onItemCall,
   onItemMessage,
-  onItemReschedule
+  onItemReschedule,
+  onItemDetails
 }: ScheduleListProps) => {
   return (
     <div className="min-w-0">
@@ -43,16 +45,19 @@ export const ScheduleList = ({
           <ScheduleItem 
             key={`${item.time}-${item.client}-${index}`}
             {...item}
+            onDetails={() => onItemDetails?.(item as ScheduleItemProps)}
             onCall={() => onItemCall?.(item as ScheduleItemProps)}
             onMessage={() => onItemMessage?.(item as ScheduleItemProps)}
             onReschedule={() => onItemReschedule?.(item as ScheduleItemProps)}
           />
         ))}
         
-        <div className="mt-4 text-center p-6 border border-dashed border-slate-200 rounded-2xl bg-slate-50/30 text-slate-400">
-          <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
-          <span className="text-xs font-medium">На сьогодні більше немає записів</span>
-        </div>
+        {items.length === 0 && (
+          <div className="mt-4 text-center p-6 border border-dashed border-slate-200 rounded-2xl bg-slate-50/30 text-slate-400">
+            <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <span className="text-xs font-medium">На сьогодні більше немає записів</span>
+          </div>
+        )}
       </div>
     </div>
   );
