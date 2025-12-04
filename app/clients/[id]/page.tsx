@@ -89,7 +89,6 @@ const SwipeableVisitItem = ({ visit, onDelete }: { visit: Visit; onDelete: () =>
   const [startX, setStartX] = useState<number | null>(null);
   const itemRef = useRef<HTMLDivElement>(null);
 
-  // Скидаємо свайп, якщо клікнули в іншому місці (опціонально)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (itemRef.current && !itemRef.current.contains(event.target as Node)) {
@@ -113,23 +112,18 @@ const SwipeableVisitItem = ({ visit, onDelete }: { visit: Visit; onDelete: () =>
     const currentX = e.touches[0].clientX;
     const diff = currentX - startX;
 
-    // Дозволяємо свайп тільки вліво (негативний diff)
     if (diff < 0) {
-      // Обмежуємо свайп до -80px (ширина кнопки видалення) з невеликим "резиновим" ефектом
       const newOffset = Math.max(diff, -100); 
       setOffsetX(newOffset);
     } else if (offsetX < 0) {
-      // Якщо вже відкрито і свайпаємо вправо (закриваємо)
       setOffsetX(Math.min(offsetX + diff, 0));
     }
   };
 
   const handleTouchEnd = () => {
     if (offsetX < -40) {
-      // Якщо протягнули достатньо далеко -> фіксуємо відкритою
       setOffsetX(-80);
     } else {
-      // Інакше -> закриваємо назад
       setOffsetX(0);
     }
     setStartX(null);
@@ -137,7 +131,6 @@ const SwipeableVisitItem = ({ visit, onDelete }: { visit: Visit; onDelete: () =>
 
   return (
     <div ref={itemRef} className="relative overflow-hidden rounded-xl mb-3 select-none group">
-      {/* Фон з кнопкою видалення (показується при зсуві контенту) */}
       <div className="absolute inset-0 bg-red-500 rounded-xl flex items-center justify-end pr-5">
         <button 
           onClick={(e) => {
@@ -151,7 +144,6 @@ const SwipeableVisitItem = ({ visit, onDelete }: { visit: Visit; onDelete: () =>
         </button>
       </div>
 
-      {/* Основний контент (зсувається) */}
       <div 
         className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm relative z-10 transition-transform duration-200 ease-out active:scale-[0.98] active:bg-slate-50"
         style={{ transform: `translateX(${offsetX}px)` }}
@@ -159,7 +151,7 @@ const SwipeableVisitItem = ({ visit, onDelete }: { visit: Visit; onDelete: () =>
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="flex justify-between items-start pointer-events-none"> {/* pointer-events-none щоб текст не заважав свайпу */}
+        <div className="flex justify-between items-start pointer-events-none">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl bg-slate-50 flex items-center justify-center text-slate-500 font-bold text-xs flex-col leading-none border border-slate-100 shrink-0">
               <span className="block mb-0.5 text-sm text-slate-800">{visit.date.split(' ')[0]}</span>
@@ -192,11 +184,9 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
   const { id } = use(params);
   const router = useRouter();
   
-  // Стан для редагування
   const [isEditing, setIsEditing] = useState(false);
   const [clientData, setClientData] = useState(initialClientData);
   
-  // Тимчасовий стан для форми редагування
   const [formData, setFormData] = useState({
     name: clientData.name,
     phone: clientData.phone,
@@ -226,13 +216,21 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
     setIsEditing(false);
   };
 
-  // Функція видалення візиту
   const handleDeleteVisit = (visitId: string) => {
     if (confirm('Ви впевнені, що хочете видалити цей запис?')) {
       setClientData(prev => ({
         ...prev,
         history: prev.history.filter(item => item.id !== visitId)
       }));
+    }
+  };
+
+  // Функція для видалення всього клієнта
+  const handleDeleteClient = () => {
+    if (confirm('Ви впевнені, що хочете видалити цього клієнта? Цю дію неможливо скасувати.')) {
+      console.log('Delete client:', id);
+      // Тут має бути логіка видалення з API/Бази даних
+      router.replace('/clients');
     }
   };
 
@@ -247,7 +245,6 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
     <BaseLayout>
       <div className="flex-1 w-full md:pl-72 flex flex-col h-[100dvh] overflow-hidden relative bg-[#fafafa]">
         
-        {/* Custom Navigation Header */}
         <header className="shrink-0 z-30 bg-[#fafafa]/95 backdrop-blur-md border-b border-slate-200/60 px-4 py-3 md:px-8 md:py-5 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button 
@@ -280,9 +277,10 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
           )}
         </header>
 
-        <main className="flex-1 overflow-y-auto overscroll-y-contain p-4 md:p-10 w-full max-w-7xl mx-auto pb-24 md:pb-10 space-y-5">
+        {/* Збільшено pb-32, щоб останній елемент списку не перекривався футером.
+        */}
+        <main className="flex-1 overflow-y-auto overscroll-y-contain p-4 md:p-10 w-full max-w-7xl mx-auto pb-32 md:pb-10 space-y-5">
           
-          {/* Main Card */}
           <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.03)] relative overflow-hidden">
             <div className="flex items-start justify-between gap-4 relative z-10">
               <div className="flex gap-4 w-full">
@@ -337,7 +335,6 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
               </div>
             </div>
 
-            {/* Quick Actions (тільки коли не редагуємо) */}
             {!isEditing && (
               <div className="grid grid-cols-2 gap-3 mt-6 relative z-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
                 <button className="flex items-center justify-center gap-2 bg-slate-900 text-white py-2.5 rounded-xl text-sm font-semibold active:scale-[0.98] transition-all shadow-lg shadow-slate-900/20">
@@ -351,11 +348,9 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
               </div>
             )}
 
-            {/* Decor */}
             <div className="absolute -top-10 -right-10 w-40 h-40 bg-slate-50 rounded-full blur-3xl opacity-60 pointer-events-none"></div>
           </div>
 
-          {/* Notes - Moved to Top */}
           <div className={`bg-amber-50/60 border border-amber-100 rounded-xl p-4 flex gap-3 relative overflow-hidden transition-all duration-300 ${isEditing ? 'ring-2 ring-amber-200 bg-white' : ''}`}>
             <StickyNote className="w-5 h-5 text-amber-500 shrink-0 relative z-10 mt-0.5" />
             <div className="relative z-10 w-full">
@@ -374,11 +369,9 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                 </p>
               )}
             </div>
-            {/* Decor for notes */}
             <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-amber-100 rounded-full blur-xl opacity-50 pointer-events-none"></div>
           </div>
 
-          {/* Stats Grid */}
           <div className="grid grid-cols-3 gap-3">
             <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex flex-col items-center justify-center text-center">
               <Calendar className="w-5 h-5 text-blue-500 mb-2 opacity-80" />
@@ -397,7 +390,6 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
             </div>
           </div>
 
-          {/* History Section */}
           <div className="pt-2">
             <SectionTitle title="Історія візитів" />
             <div className="space-y-1">
@@ -419,6 +411,23 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
           </div>
 
         </main>
+
+        {/* Кнопка видалення тепер у фіксованому футері.
+          z-[60] гарантує, що вона буде поверх навігації та контенту.
+        */}
+        {isEditing && (
+          <div className="fixed bottom-0 right-0 left-0 md:left-72 bg-white/90 backdrop-blur-md border-t border-slate-200 p-4 pb-safe z-[60] animate-in slide-in-from-bottom-full duration-200 shadow-[0_-4px_20px_-4px_rgba(0,0,0,0.1)]">
+             <div className="max-w-7xl mx-auto flex justify-center">
+                <button 
+                  onClick={handleDeleteClient}
+                  className="w-14 h-14 flex items-center justify-center rounded-full bg-red-50 text-red-500 border border-red-100 active:scale-90 transition-all shadow-sm hover:bg-red-100 hover:border-red-200"
+                >
+                  <Trash2 className="w-6 h-6" />
+                </button>
+             </div>
+          </div>
+        )}
+
       </div>
     </BaseLayout>
   );
