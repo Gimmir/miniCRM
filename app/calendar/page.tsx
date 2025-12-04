@@ -41,7 +41,7 @@ export default function CalendarPage() {
         {/* Agenda Section */}
         <div className="space-y-4 px-1">
           <div className="flex items-center justify-between pt-2">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <h3 className="text-lg font-bold text-slate-900 capitalize tracking-tight">
               {selectedDate.getDate()} {monthNames[selectedDate.getMonth()]}
             </h3>
             <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl w-10 h-10 flex items-center justify-center shadow-md shadow-blue-500/20 active:scale-95 transition-all">

@@ -38,6 +38,7 @@ export const CalendarCard = ({
   const [currentDate, setCurrentDate] = useState(new Date(selectedDate));
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Розрахунок кількості тижнів для динамічної висоти
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
   const startingDayIndex = firstDayOfMonth === 0 ? 6 : firstDayOfMonth - 1; 
@@ -45,9 +46,9 @@ export const CalendarCard = ({
   const totalSlots = startingDayIndex + daysInMonth;
   const numWeeks = Math.ceil(totalSlots / 7);
 
-  // Висоти для анімації
-  const ROW_HEIGHT = 44; // Трохи менше, компактніше
-  const CONTAINER_PADDING = 8;
+  // Конфігурація висоти
+  const ROW_HEIGHT = 48; 
+  const CONTAINER_PADDING = 12;
   
   const expandedHeight = (numWeeks * ROW_HEIGHT) + CONTAINER_PADDING;
   const collapsedHeight = ROW_HEIGHT + CONTAINER_PADDING;
@@ -92,7 +93,7 @@ export const CalendarCard = ({
       <div className="flex items-center justify-between mb-4 px-1">
         <button 
           onClick={handlePrev} 
-          className="w-10 h-10 flex items-center justify-center hover:bg-slate-50 rounded-full transition-colors text-slate-400 active:scale-90 active:bg-slate-100"
+          className="w-10 h-10 flex items-center justify-center hover:bg-slate-50 rounded-full transition-colors text-slate-500 active:scale-90 active:bg-slate-100"
         >
           <ChevronLeft className="w-6 h-6" />
         </button>
@@ -101,17 +102,17 @@ export const CalendarCard = ({
           className="flex flex-col items-center cursor-pointer select-none active:opacity-70 transition-opacity" 
           onClick={() => setIsExpanded(!isExpanded)}
         >
-          <h2 className="text-lg font-bold text-slate-900 capitalize flex items-center gap-2">
+          <h2 className="text-xl font-bold text-slate-900 capitalize flex items-center gap-2">
             {monthNames[isExpanded ? currentDate.getMonth() : selectedDate.getMonth()]}
           </h2>
-          <span className="text-xs font-semibold text-slate-400 tracking-wide">
+          <span className="text-xs font-medium text-slate-400 tracking-wide">
             {isExpanded ? currentDate.getFullYear() : selectedDate.getFullYear()}
           </span>
         </div>
 
         <button 
           onClick={handleNext} 
-          className="w-10 h-10 flex items-center justify-center hover:bg-slate-50 rounded-full transition-colors text-slate-400 active:scale-90 active:bg-slate-100"
+          className="w-10 h-10 flex items-center justify-center hover:bg-slate-50 rounded-full transition-colors text-slate-500 active:scale-90 active:bg-slate-100"
         >
           <ChevronRight className="w-6 h-6" />
         </button>
@@ -120,7 +121,7 @@ export const CalendarCard = ({
       {/* Days Header */}
       <div className="grid grid-cols-7 mb-2 place-items-center">
         {weekDays.map(day => (
-          <div key={day} className="text-center text-[10px] font-bold text-slate-300 uppercase tracking-wider w-full">
+          <div key={day} className="text-center text-[11px] font-semibold text-slate-400 uppercase tracking-wider w-full">
             {day}
           </div>
         ))}
@@ -128,7 +129,7 @@ export const CalendarCard = ({
 
       {/* Animated Grid Container */}
       <div 
-        className="relative overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] p-1 -mx-1" 
+        className="relative overflow-hidden transition-all duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] p-1.5 -mx-1.5" 
         style={{ 
           height: isExpanded ? `${expandedHeight}px` : `${collapsedHeight}px`
         }}
@@ -136,7 +137,7 @@ export const CalendarCard = ({
         {isExpanded ? (
           // MONTH VIEW
           <div className="grid grid-cols-7 gap-y-0 place-items-center animate-in fade-in duration-300 w-full">
-            {Array.from({ length: startingDayIndex }).map((_, i) => <div key={`empty-${i}`} className="w-full h-10" />)}
+            {Array.from({ length: startingDayIndex }).map((_, i) => <div key={`empty-${i}`} className="w-full h-12" />)}
             {Array.from({ length: daysInMonth }).map((_, i) => {
               const day = i + 1;
               const dateObj = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
@@ -144,16 +145,16 @@ export const CalendarCard = ({
               const isToday = new Date().getDate() === day && new Date().getMonth() === currentDate.getMonth();
               
               return (
-                <div key={day} className="w-full flex justify-center py-0.5">
+                <div key={day} className="w-full flex justify-center py-1">
                   <button
                     onClick={() => handleDateSelect(dateObj)}
                     className={`
-                      w-10 h-10 flex items-center justify-center rounded-full text-sm font-medium transition-all relative
+                      w-10 h-10 flex items-center justify-center rounded-full text-sm transition-all relative
                       ${isSelected 
-                        ? 'bg-blue-600 text-white font-bold scale-100 z-10 shadow-md shadow-blue-500/30'
+                        ? 'bg-blue-600 text-white font-bold scale-100 z-10' 
                         : isToday 
                           ? 'text-blue-600 bg-blue-50 font-bold border border-blue-100'
-                          : 'text-slate-700 hover:bg-slate-50 active:bg-slate-100 active:scale-90'
+                          : 'text-slate-700 font-medium hover:bg-slate-50 active:bg-slate-100 active:scale-90'
                       }
                     `}
                   >
@@ -175,16 +176,16 @@ export const CalendarCard = ({
                const isToday = new Date().getDate() === day && new Date().getMonth() === date.getMonth();
 
                return (
-                <div key={i} className="w-full flex justify-center py-0.5">
+                <div key={i} className="w-full flex justify-center py-1">
                   <button
                     onClick={() => handleDateSelect(date)}
                     className={`
-                      w-10 h-10 flex items-center justify-center rounded-full text-sm font-medium transition-all relative
+                      w-10 h-10 flex items-center justify-center rounded-full text-sm transition-all relative
                       ${isSelected 
-                        ? 'bg-blue-600 text-white font-bold scale-100 z-10 shadow-md shadow-blue-500/30'
+                        ? 'bg-blue-600 text-white font-bold scale-100 z-10' 
                         : isToday 
                           ? 'text-blue-600 bg-blue-50 font-bold border border-blue-100'
-                          : 'text-slate-700 hover:bg-slate-50 active:bg-slate-100 active:scale-90'
+                          : 'text-slate-700 font-medium hover:bg-slate-50 active:bg-slate-100 active:scale-90'
                       }
                     `}
                   >
@@ -206,9 +207,9 @@ export const CalendarCard = ({
         className="w-full flex items-center justify-center pt-2 pb-1 -mb-1 opacity-40 hover:opacity-100 transition-opacity active:scale-95"
       >
          {isExpanded ? (
-           <ChevronUp className="w-5 h-5 text-slate-300" />
+           <ChevronUp className="w-5 h-5 text-slate-400" />
          ) : (
-           <ChevronDown className="w-5 h-5 text-slate-300" />
+           <ChevronDown className="w-5 h-5 text-slate-400" />
          )}
       </button>
     </div>
