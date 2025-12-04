@@ -34,8 +34,9 @@ interface Visit {
 const initialClientData = {
   id: '1',
   name: 'Іван Петренко',
-  phone: '+380 50 123 4567',
-  username: '@ivan_petrenko',
+  phone: '+380501234567', // Зберігаємо без пробілів для tel:
+  displayPhone: '+380 50 123 4567',
+  username: 'ivan_petrenko', // Без @ для посилання
   avatarColor: 'bg-blue-100 text-blue-700',
   notes: 'Любить каву з молоком. Алергія на лак сильної фіксації. Завжди записується на ранок.',
   stats: {
@@ -113,7 +114,6 @@ const SwipeableVisitItem = ({ visit, onDelete }: { visit: Visit; onDelete: () =>
     const diff = currentX - startX;
 
     if (diff < 0) {
-      // Зменшив максимальний відступ, оскільки кнопки тепер менше (тільки іконка)
       const newOffset = Math.max(diff, -80); 
       setOffsetX(newOffset);
     } else if (offsetX < 0) {
@@ -122,7 +122,6 @@ const SwipeableVisitItem = ({ visit, onDelete }: { visit: Visit; onDelete: () =>
   };
 
   const handleTouchEnd = () => {
-    // Зменшив поріг спрацювання і фінальну позицію
     if (offsetX < -30) {
       setOffsetX(-60);
     } else {
@@ -141,7 +140,6 @@ const SwipeableVisitItem = ({ visit, onDelete }: { visit: Visit; onDelete: () =>
           }}
           className="flex items-center justify-center text-white h-full w-[60px] active:opacity-70 transition-opacity"
         >
-          {/* Збільшив іконку до w-6 h-6 для кращої видимості без тексту */}
           <Trash2 className="w-6 h-6" />
         </button>
       </div>
@@ -191,7 +189,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
   
   const [formData, setFormData] = useState({
     name: clientData.name,
-    phone: clientData.phone,
+    phone: clientData.displayPhone,
     username: clientData.username,
     notes: clientData.notes
   });
@@ -199,7 +197,7 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
   const handleEditClick = () => {
     setFormData({
       name: clientData.name,
-      phone: clientData.phone,
+      phone: clientData.displayPhone,
       username: clientData.username,
       notes: clientData.notes
     });
@@ -211,11 +209,29 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
   };
 
   const handleSaveClick = () => {
+    // Тут ми симулюємо очистку номера телефону для зберігання
+    const cleanPhone = formData.phone.replace(/\s/g, '');
+    
     setClientData({
       ...clientData,
-      ...formData
+      name: formData.name,
+      phone: cleanPhone,
+      displayPhone: formData.phone,
+      username: formData.username.replace('@', ''),
+      notes: formData.notes
     });
     setIsEditing(false);
+  };
+
+  const handleCall = () => {
+    window.location.href = `tel:${clientData.phone}`;
+  };
+
+  const handleMessage = () => {
+    // Відкриваємо Telegram за номером телефону
+    // Формат t.me/+380XXXXXXXXX
+    const cleanPhone = clientData.phone.replace(/\s+/g, '').replace(/[^0-9+]/g, '');
+    window.open(`https://t.me/${cleanPhone}`, '_blank');
   };
 
   const handleDeleteVisit = (visitId: string) => {
@@ -227,11 +243,9 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
     }
   };
 
-  // Функція для видалення всього клієнта
   const handleDeleteClient = () => {
     if (confirm('Ви впевнені, що хочете видалити цього клієнта? Цю дію неможливо скасувати.')) {
       console.log('Delete client:', id);
-      // Тут має бути логіка видалення з API/Бази даних
       router.replace('/clients');
     }
   };
@@ -311,24 +325,13 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
                           placeholder="+380..."
                         />
                       </div>
-                      <div>
-                        <label className="text-[10px] uppercase font-bold text-slate-400 mb-1 block">Telegram username</label>
-                        <input
-                          type="text"
-                          value={formData.username}
-                          onChange={(e) => setFormData({...formData, username: e.target.value})}
-                          className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
-                          placeholder="@username"
-                        />
-                      </div>
+                      {/* Telegram username input removed since we use phone number */}
                     </div>
                   ) : (
                     <>
                       <h1 className="text-xl font-bold text-slate-900 leading-tight mb-1">{clientData.name}</h1>
-                      <p className="text-sm font-medium text-slate-500 mb-0.5">{clientData.phone}</p>
-                      {clientData.username && (
-                        <p className="text-xs text-blue-500 font-medium">{clientData.username}</p>
-                      )}
+                      <p className="text-sm font-medium text-slate-500 mb-0.5">{clientData.displayPhone}</p>
+                      {/* Username display removed */}
                     </>
                   )}
                 </div>
@@ -337,11 +340,17 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
 
             {!isEditing && (
               <div className="grid grid-cols-2 gap-3 mt-6 relative z-10 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <button className="flex items-center justify-center gap-2 bg-slate-900 text-white py-2.5 rounded-xl text-sm font-semibold active:scale-[0.98] transition-all shadow-lg shadow-slate-900/20">
+                <button 
+                  onClick={handleCall}
+                  className="flex items-center justify-center gap-2 bg-slate-900 text-white py-2.5 rounded-xl text-sm font-semibold active:scale-[0.98] transition-all shadow-lg shadow-slate-900/20"
+                >
                   <Phone className="w-4 h-4" />
                   Подзвонити
                 </button>
-                <button className="flex items-center justify-center gap-2 bg-blue-50 text-blue-700 py-2.5 rounded-xl text-sm font-semibold active:scale-[0.98] transition-all hover:bg-blue-100">
+                <button 
+                  onClick={handleMessage}
+                  className="flex items-center justify-center gap-2 bg-blue-50 text-blue-700 py-2.5 rounded-xl text-sm font-semibold active:scale-[0.98] transition-all hover:bg-blue-100"
+                >
                   <MessageCircle className="w-4 h-4" />
                   Написати
                 </button>
