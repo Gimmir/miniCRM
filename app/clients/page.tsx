@@ -91,8 +91,7 @@ export default function ClientsPage() {
   }, [searchQuery, sortOrder]);
 
   const handleContactClick = (contact: any) => {
-    console.log('Navigate to client:', contact.id);
-    // router.push(`/clients/${contact.id}`);
+    router.push(`/clients/${contact.id}`);
   };
 
   const toggleSort = () => setIsSortMenuOpen(!isSortMenuOpen);
