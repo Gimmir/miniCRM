@@ -109,12 +109,16 @@ export default function ClientsPage() {
             <input
               type="text"
               placeholder="Пошук..."
-              className="w-full pl-9 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
+              /* FIX: Змінено 'text-sm' на 'text-base md:text-sm'. 
+                 Це встановлює розмір шрифту 16px на мобільних, що запобігає авто-зуму в Safari iOS.
+                 На десктопі (md:) шрифт повернеться до меншого розміру.
+              */
+              className="w-full pl-9 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-base md:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm placeholder:text-slate-400"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl w-12 flex items-center justify-center shadow-md shadow-blue-500/20 active:scale-95 transition-all">
+          <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl w-12 flex items-center justify-center shadow-md shadow-blue-500/20 active:scale-95 transition-all shrink-0">
             <Plus className="w-6 h-6" />
           </button>
         </div>
