@@ -113,7 +113,8 @@ const SwipeableVisitItem = ({ visit, onDelete }: { visit: Visit; onDelete: () =>
     const diff = currentX - startX;
 
     if (diff < 0) {
-      const newOffset = Math.max(diff, -100); 
+      // Зменшив максимальний відступ, оскільки кнопки тепер менше (тільки іконка)
+      const newOffset = Math.max(diff, -80); 
       setOffsetX(newOffset);
     } else if (offsetX < 0) {
       setOffsetX(Math.min(offsetX + diff, 0));
@@ -121,8 +122,9 @@ const SwipeableVisitItem = ({ visit, onDelete }: { visit: Visit; onDelete: () =>
   };
 
   const handleTouchEnd = () => {
-    if (offsetX < -40) {
-      setOffsetX(-80);
+    // Зменшив поріг спрацювання і фінальну позицію
+    if (offsetX < -30) {
+      setOffsetX(-60);
     } else {
       setOffsetX(0);
     }
@@ -131,16 +133,16 @@ const SwipeableVisitItem = ({ visit, onDelete }: { visit: Visit; onDelete: () =>
 
   return (
     <div ref={itemRef} className="relative overflow-hidden rounded-xl mb-3 select-none group">
-      <div className="absolute inset-0 bg-red-500 rounded-xl flex items-center justify-end pr-5">
+      <div className="absolute inset-0 bg-red-500 rounded-xl flex items-center justify-end">
         <button 
           onClick={(e) => {
             e.stopPropagation();
             onDelete();
           }}
-          className="flex flex-col items-center justify-center text-white h-full w-20 active:opacity-70 transition-opacity"
+          className="flex items-center justify-center text-white h-full w-[60px] active:opacity-70 transition-opacity"
         >
-          <Trash2 className="w-5 h-5 mb-1" />
-          <span className="text-[10px] font-bold">Видалити</span>
+          {/* Збільшив іконку до w-6 h-6 для кращої видимості без тексту */}
+          <Trash2 className="w-6 h-6" />
         </button>
       </div>
 
@@ -277,8 +279,6 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
           )}
         </header>
 
-        {/* Збільшено pb-32, щоб останній елемент списку не перекривався футером.
-        */}
         <main className="flex-1 overflow-y-auto overscroll-y-contain p-4 md:p-10 w-full max-w-7xl mx-auto pb-32 md:pb-10 space-y-5">
           
           <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.03)] relative overflow-hidden">
@@ -412,17 +412,15 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
 
         </main>
 
-        {/* Кнопка видалення тепер у фіксованому футері.
-          z-[60] гарантує, що вона буде поверх навігації та контенту.
-        */}
         {isEditing && (
           <div className="fixed bottom-0 right-0 left-0 md:left-72 bg-white/90 backdrop-blur-md border-t border-slate-200 p-4 pb-safe z-[60] animate-in slide-in-from-bottom-full duration-200 shadow-[0_-4px_20px_-4px_rgba(0,0,0,0.1)]">
-             <div className="max-w-7xl mx-auto flex justify-center">
+             <div className="max-w-7xl mx-auto">
                 <button 
                   onClick={handleDeleteClient}
-                  className="w-14 h-14 flex items-center justify-center rounded-full bg-red-50 text-red-500 border border-red-100 active:scale-90 transition-all shadow-sm hover:bg-red-100 hover:border-red-200"
+                  className="w-full flex items-center justify-center gap-2 bg-red-50 text-red-600 border border-red-200 py-3 rounded-xl text-sm font-bold active:scale-[0.98] transition-all shadow-sm hover:bg-red-100"
                 >
-                  <Trash2 className="w-6 h-6" />
+                  <Trash2 className="w-4 h-4" />
+                  Видалити клієнта
                 </button>
              </div>
           </div>
