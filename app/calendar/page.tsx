@@ -30,14 +30,21 @@ export default function CalendarPage() {
   return (
     <AppShell title="Календар">
       <div className="animate-in fade-in duration-500 pb-20">
-        <CalendarCard selectedDate={selectedDate} onDateChange={setSelectedDate} hasEvent={hasEvent} />
-        
+      
+        {/* Calendar Card */}
+        <CalendarCard 
+          selectedDate={selectedDate}
+          onDateChange={setSelectedDate}
+          hasEvent={hasEvent}
+        />
+
+        {/* Agenda Section */}
         <div className="space-y-4 px-1">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wide">
+          <div className="flex items-center justify-between pt-2">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
               {selectedDate.getDate()} {monthNames[selectedDate.getMonth()]}
             </h3>
-            <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-full p-3 shadow-md shadow-blue-500/20 active:scale-95 transition-all">
+            <button className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl w-10 h-10 flex items-center justify-center shadow-md shadow-blue-500/20 active:scale-95 transition-all">
               <Plus className="w-5 h-5" />
             </button>
           </div>
