@@ -84,10 +84,15 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
 
   return (
     <BaseLayout>
-      <div className="flex-1 w-full md:pl-72 flex flex-col min-w-0 relative bg-[#fafafa]">
+      {/* FIX: Використовуємо h-[100dvh] та overflow-hidden для контейнера.
+        Це ізолює сторінку від скролу браузера, запобігаючи "стрибанню" хедерів.
+      */}
+      <div className="flex-1 w-full md:pl-72 flex flex-col h-[100dvh] overflow-hidden relative bg-[#fafafa]">
         
-        {/* Custom Navigation Header */}
-        <header className="sticky top-0 z-30 bg-[#fafafa]/95 backdrop-blur-md border-b border-slate-200/60 px-4 py-3 md:px-8 md:py-5 flex items-center justify-between">
+        {/* FIX: Хедер тепер не sticky, а shrink-0. 
+          Він стоїть статично зверху, бо скролиться тільки блок <main> нижче.
+        */}
+        <header className="shrink-0 z-30 bg-[#fafafa]/95 backdrop-blur-md border-b border-slate-200/60 px-4 py-3 md:px-8 md:py-5 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button 
               onClick={() => router.back()}
@@ -108,7 +113,10 @@ export default function ClientProfilePage({ params }: { params: Promise<{ id: st
           </button>
         </header>
 
-        <main className="flex-1 p-4 md:p-10 w-full max-w-7xl mx-auto pb-24 md:pb-10 space-y-5">
+        {/* FIX: overflow-y-auto перенесено сюди. 
+          overscroll-y-contain запобігає передачі скролу батьківському елементу (rubber-banding ефект тільки тут).
+        */}
+        <main className="flex-1 overflow-y-auto overscroll-y-contain p-4 md:p-10 w-full max-w-7xl mx-auto pb-24 md:pb-10 space-y-5">
           
           {/* Main Card */}
           <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.03)] relative overflow-hidden">
